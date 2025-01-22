@@ -8,6 +8,7 @@ https://github.com/vchoutas/smplx/blob/main/smplx/joint_names.py
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import numpy as np
 from util.load import pickle_load
 
@@ -264,6 +265,8 @@ SMPL_JOINT_NAMES = [
 ]
 
 def load_model(model_path: Path, gender: str=None):
+    if gender.startswith('np.bytes_'):
+        gender = gender.strip('np.bytes_').strip("()").strip("b'")
     if isinstance(model_path, str):
         model_path = Path(model_path)
     if model_path.suffix == "":
@@ -276,7 +279,7 @@ def load_model(model_path: Path, gender: str=None):
                 model_dict = pickle_load(model_path)
             except:
                 model_dict = pickle_load(model_path, encoding="latin1")
-        case _ :  
+        case _ :
             ValueError("This file is not supported.")
     return model_dict
 

@@ -30,6 +30,7 @@ def load(
     num_betas: int=16,
     scale: float=100.0,
     load_hand=True,
+    num_joints=None
 ) -> Animation:
     """
     args:
@@ -45,19 +46,22 @@ def load(
     Return:
         anim (Animation)
     """
-    if load_hand: 
+    if load_hand:
         NUM_JOINTS = 52
         names = SMPLH_JOINT_NAMES[:NUM_JOINTS]
-    else: 
-        NUM_JOINTS = 24
+    else:
+        if num_joints is None:
+            NUM_JOINTS = 24
+        else:
+            NUM_JOINTS = num_joints
         names = SMPL_JOINT_NAMES[:NUM_JOINTS]
 
     if not isinstance(amass_motion_path, Path):
         amass_motion_path = Path(amass_motion_path)
     if not isinstance(smplh_path, Path):
         smplh_path = Path(smplh_path)
-    
-    
+
+
     trans_quat = quat.mul(quat.from_angle_axis(-np.pi / 2, [0, 1, 0]), quat.from_angle_axis(-np.pi / 2, [1, 0, 0]))
 
     # Load AMASS info.
@@ -81,13 +85,14 @@ def load(
         J_regressor = smplh_dict["J_regressor"]
         shapedirs = smplh_dict["shapedirs"]
         v_template = smplh_dict["v_template"]
-        
+
         J_positions = calc_skel_offsets(betas, J_regressor, shapedirs, v_template)[:NUM_JOINTS] * scale
         root_offset = J_positions[0]
         offsets = J_positions - J_positions[parents]
         offsets[0] = root_offset
+
         skel = Skel.from_names_parents_offsets(names, parents, offsets, skel_name="SMPLH")
-    
+
     root_pos = skel.offsets[0][None].repeat(len(quats), axis=0)
     trans = amass_dict["trans"] * scale + root_pos
     trans = trans @ quat.to_xform(trans_quat).T
